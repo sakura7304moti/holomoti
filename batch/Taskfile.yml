@@ -1,0 +1,8 @@
+version: '3'
+
+tasks:
+  twitter_scraping:
+    dir: ./service
+    desc: twitterのDBを更新する
+    cmds:
+      - uv run python twitter_service.py
