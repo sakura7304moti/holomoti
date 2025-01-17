@@ -2,7 +2,7 @@ import reflex as rx
 
 from rxconfig import config
 from holomoti.service import twitter_service
-from holomoti.service.module.twitter import TweetSearchState
+from holomoti.service.module.twitter import TweetSearchState, TweetMedia
 
 
 class State(rx.State):
@@ -24,8 +24,31 @@ class State(rx.State):
         self.is_loading = False
 
 
+def image_card(medias: list[TweetMedia]):
+    return rx.vstack(
+        rx.foreach(
+            medias,
+            lambda m: rx.image(
+                src=m.url,
+                max_width="700px",
+                width="100%",
+                max_height="70vh",
+                height="100%",
+                object_fit="contain",
+                object_position="center",
+            ),
+        )
+    )
+
+
 def tweet_card(state: TweetSearchState) -> rx.Component:
-    return rx.box(rx.text(state.tweet))
+    return rx.box(
+        rx.hstack(
+            rx.avatar(src=state.userIcon),
+            rx.vstack(rx.text(state.tweet), image_card(state.medias)),
+        ),
+        margin_bottom="16px",
+    )
 
 
 def index() -> rx.Component:
@@ -33,13 +56,12 @@ def index() -> rx.Component:
     return rx.container(
         rx.vstack(
             rx.heading("twitter検索", size="6"),
-            rx.hstack(
-                rx.input(placeholder="キーワード", on_change=State.set_text),
-                rx.button(
-                    "検索",
-                    on_click=State.on_search_click,
-                    cursor="pointer",
+            rx.form.root(
+                rx.hstack(
+                    rx.input(placeholder="キーワード", on_change=State.set_text),
+                    rx.button("検索", cursor="pointer", type="submit"),
                 ),
+                on_submit=State.on_search_click,
             ),
             rx.container(rx.foreach(State.records, tweet_card)),
             spacing="5",
@@ -47,9 +69,6 @@ def index() -> rx.Component:
             min_height="100vh",
         ),
         background_image="url('https://hololive.hololivepro.com/wp-content/themes/hololive/images/fixed_bg.jpg')",
-        background_size="cover",  # 画像を画面いっぱいに表示
-        background_position="center",  # 画像の位置を中央に
-        background_repeat="no-repeat",  # 画像の繰り返しを防止
     )
 
 

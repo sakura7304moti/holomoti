@@ -1,4 +1,5 @@
 # ファンアートの検索モジュール
+import re
 from holomoti.service.module.utils import PsqlBase
 import reflex as rx
 import math
@@ -22,6 +23,7 @@ class TweetSearchState(rx.Base):
     tweet: str = ""
     userId: str = ""
     userName: str = ""
+    userIcon: str = ""
     source: str = ""
     medias: list[TweetMedia] = []
 
@@ -75,6 +77,7 @@ def search(text: str, page_no: int) -> list[TweetSearchState]:
         tw.tweet_text as "tweet",
         max(us.screen_name) as "userId",
         max(us.name) as "userName",
+        max(us.profile_image) as "userIcon",
         tw.tweet_url as "source"
     from 
         holo.twitter_tweet as tw
@@ -108,8 +111,10 @@ def search(text: str, page_no: int) -> list[TweetSearchState]:
         tweet_state = TweetSearchState()
         tweet_state.id = row["id"]
         tweet_state.tweet = row["tweet"]
+        tweet_state.tweet = re.sub(r"https://t\.co/\S+", "", tweet_state.tweet)
         tweet_state.userId = row["userId"]
         tweet_state.userName = row["userName"]
+        tweet_state.userIcon = row["userIcon"]
         tweet_state.source = row["source"]
         media_df = media_base_df[media_base_df["tweetId"] == row["id"]]
         media = []
