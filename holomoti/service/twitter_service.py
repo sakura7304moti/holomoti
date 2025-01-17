@@ -1,8 +1,10 @@
 # ファンアートの検索モジュール
 from holomoti.service.module import twitter
 
-def search(text:str, page_no:int) -> list[twitter.TweetSearchState]:
-    return twitter.search(text, page_no)
 
-def get_total_pages(text:str) -> int:
-    return twitter.get_total_pages(text)
+def search(text: str, like_count: int, page_no: int) -> list[twitter.TweetSearchState]:
+    return twitter.search(text, like_count, page_no)
+
+
+def get_total_pages(text: str, like_count: int) -> int:
+    return twitter.get_total_pages(text, like_count)

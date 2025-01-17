@@ -7,6 +7,11 @@ import math
 PAGE_SIZE = 20
 
 
+class TweetSplit(rx.Base):
+    type: str = ""
+    text: str = ""
+
+
 class TweetMedia(rx.Base):
     """ツイートのメディア"""
 
@@ -21,6 +26,7 @@ class TweetSearchState(rx.Base):
 
     id: int = 0
     tweet: str = ""
+    tweet_split: list[TweetSplit] = []
     userId: str = ""
     userName: str = ""
     userIcon: str = ""
@@ -69,7 +75,25 @@ def get_medias(id: int) -> list[TweetMedia]:
     return results
 
 
-def search(text: str, page_no: int) -> list[TweetSearchState]:
+def extract_hashtags(text: str):
+    # 正規表現でハッシュタグを抽出
+    hashtags = re.findall(r"#\S+", text)
+
+    # ハッシュタグ以外の部分を分割
+    parts = re.split(r"(#\S+)", text)
+
+    # 結果を識別可能なリストに整形
+    result = []
+    for part in parts:
+        item = TweetSplit()
+        item.text = part
+        item.type = "hashtag" if part in hashtags else "text"
+        result.append(item)
+
+    return result
+
+
+def search(text: str, like_count: int, page_no: int) -> list[TweetSearchState]:
     """ツイートを検索する。今は画像だけ。"""
     query = """
     SELECT
@@ -92,12 +116,14 @@ def search(text: str, page_no: int) -> list[TweetSearchState]:
             OR hs.hashtag like %(keyword)s
             OR us.name like %(keyword)s
         )
+        AND tw.like_count > %(likecount)s
     group by tw.id
     order by tw.created_at desc
     offset %(offset)s limit %(pagesize)s
     """
     args = {
         "keyword": f"%{text}%",
+        "likecount": like_count,
         "offset": max(page_no - 1, 0) * PAGE_SIZE,
         "pagesize": PAGE_SIZE,
     }
@@ -110,8 +136,9 @@ def search(text: str, page_no: int) -> list[TweetSearchState]:
     for _, row in df.iterrows():
         tweet_state = TweetSearchState()
         tweet_state.id = row["id"]
+        row["tweet"] = re.sub(r"https://t\.co/\S+", "", row["tweet"])
         tweet_state.tweet = row["tweet"]
-        tweet_state.tweet = re.sub(r"https://t\.co/\S+", "", tweet_state.tweet)
+        tweet_state.tweet_split = extract_hashtags(row["tweet"])
         tweet_state.userId = row["userId"]
         tweet_state.userName = row["userName"]
         tweet_state.userIcon = row["userIcon"]
@@ -132,7 +159,7 @@ def search(text: str, page_no: int) -> list[TweetSearchState]:
     return results
 
 
-def get_total_pages(text: str) -> int:
+def get_total_pages(text: str, like_count: int) -> int:
     # 総件数取得用クエリ
     query = """
     SELECT 
@@ -150,10 +177,12 @@ def get_total_pages(text: str) -> int:
             OR hs.hashtag LIKE %(keyword)s
             OR us.name LIKE %(keyword)s
         )
+        AND tw.like_count > %(likecount)s
     """
 
     args = {
         "keyword": f"%{text}%",
+        "likecount": like_count,
     }
     model = PsqlBase()
     df = model.execute_df(query, args)
