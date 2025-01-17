@@ -1,1 +1,6 @@
+.web
+*.db
+*.py[cod]
+assets/external/
+__pycache__/
 batch/service/module/__pycache__
