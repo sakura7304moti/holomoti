@@ -93,8 +93,25 @@ def extract_hashtags(text: str):
     return result
 
 
-def search(text: str, like_count: int, page_no: int) -> list[TweetSearchState]:
+def search(
+    text: str, like_count: int, hashtag: str, page_no: int
+) -> list[TweetSearchState]:
     """ツイートを検索する。今は画像だけ。"""
+    hashtag_condition = (
+        " and 1 = 1 " if hashtag == "" else "and hs.hashtag = %(hashtag)s"
+    )
+    keyword_condition = (
+        """
+            AND 
+            (
+                tw.tweet_text like %(keyword)s
+                OR hs.hashtag like %(keyword)s
+                OR us.name like %(keyword)s
+            )
+        """
+        if text != ""
+        else " and 1 = 1 "
+    )
     query = """
     SELECT
         tw.id as "id",
@@ -110,25 +127,28 @@ def search(text: str, like_count: int, page_no: int) -> list[TweetSearchState]:
         LEFT JOIN holo.twitter_user as us ON tw.user_screen_name = us.screen_name
     where 
         md.media_type = 'image'
-        AND 
-        (
-            tw.tweet_text like %(keyword)s
-            OR hs.hashtag like %(keyword)s
-            OR us.name like %(keyword)s
-        )
         AND tw.like_count > %(likecount)s
-    group by tw.id
-    order by tw.created_at desc
-    offset %(offset)s limit %(pagesize)s
+    
     """
+    query += keyword_condition
+    query += hashtag_condition
+    query += """
+        group by tw.id
+        order by tw.created_at desc
+        offset %(offset)s limit %(pagesize)s
+    """
+
     args = {
         "keyword": f"%{text}%",
         "likecount": like_count,
+        "hashtag": hashtag,
         "offset": max(page_no - 1, 0) * PAGE_SIZE,
         "pagesize": PAGE_SIZE,
     }
     model = PsqlBase()
     df = model.execute_df(query, args)
+    if len(df) == 0:
+        return []
     ids = df["id"].astype(int).tolist()
     media_base_df = get_base_medias(ids)
 
@@ -159,7 +179,11 @@ def search(text: str, like_count: int, page_no: int) -> list[TweetSearchState]:
     return results
 
 
-def get_total_pages(text: str, like_count: int) -> int:
+def get_total_pages(
+    text: str,
+    like_count: int,
+    hashtag: str,
+) -> int:
     # 総件数取得用クエリ
     query = """
     SELECT 
@@ -171,18 +195,30 @@ def get_total_pages(text: str, like_count: int) -> int:
         LEFT JOIN holo.twitter_user as us ON tw.user_screen_name = us.screen_name
     WHERE 
         md.media_type = 'image'
-        AND 
-        (
-            tw.tweet_text LIKE %(keyword)s
-            OR hs.hashtag LIKE %(keyword)s
-            OR us.name LIKE %(keyword)s
-        )
         AND tw.like_count > %(likecount)s
     """
+    hashtag_condition = (
+        " and 1 = 1 " if hashtag == "" else "and hs.hashtag = %(hashtag)s"
+    )
+    keyword_condition = (
+        """
+            AND 
+            (
+                tw.tweet_text like %(keyword)s
+                OR hs.hashtag like %(keyword)s
+                OR us.name like %(keyword)s
+            )
+        """
+        if text != ""
+        else " and 1 = 1 "
+    )
+    query += hashtag_condition
+    query += keyword_condition
 
     args = {
         "keyword": f"%{text}%",
         "likecount": like_count,
+        "hashtag": hashtag,
     }
     model = PsqlBase()
     df = model.execute_df(query, args)
