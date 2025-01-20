@@ -1,4 +1,5 @@
 import datetime
+import os
 from urllib.parse import urlparse
 import pandas as pd
 import psycopg2
@@ -31,7 +32,10 @@ class PsqlBase:
         """
         接続URL
         """
-        return "postgresql+psycopg2://sakura0moti:music0@192.168.11.31/holomoti"
+        # return "postgresql+psycopg2://sakura0moti:music0@192.168.11.31/holomoti"
+        return os.getenv(
+            "HOLOMOTI_DB", "postgresql+psycopg2://sakura0moti:music0@127.0.0.1/holomoti"
+        )
 
     def db_pd_connection(self):
         """
