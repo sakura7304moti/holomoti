@@ -102,7 +102,6 @@ class PsqlBase:
         """
         クエリを実行するだけ。commitが必要な場合はこっち。
         """
-        print(self.db_url())
         with self.db_psql_connection() as con:
             cur = con.cursor()
             if param is None:
