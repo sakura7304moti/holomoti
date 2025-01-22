@@ -5,6 +5,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from urllib.parse import urlparse
 
+
 class Option:
     def root_path(self):
         """
@@ -14,12 +15,13 @@ class Option:
         for _ in range(3):
             path = os.path.dirname(path)
         return path
-    
+
     def option_path(self):
-        return os.path.join(self.root_path(), 'option')
-    
+        return os.path.join(self.root_path(), "option")
+
     def holo_names(self):
-        return os.path.join(self.option_path(), 'holo_names.csv')
+        return os.path.join(self.option_path(), "holo_names.csv")
+
 
 class PsqlBase:
     def __init__(self):
@@ -67,19 +69,18 @@ class PsqlBase:
         self.execute_commit(media_table)
         self.execute_commit(user_table)
 
-
     def db_url(self):
         """
         接続URL
         """
-        return 'postgresql+psycopg2://sakura0moti:music0@192.168.11.31/holomoti'
+        return "postgresql+psycopg2://sakura0moti:music0@192.168.11.31/holomoti"
 
     def db_pd_connection(self):
         """
         read_sql用の接続情報
         """
         return create_engine(self.db_url())
-    
+
     def db_psql_connection(self):
         """
         コミット用の接続情報
@@ -94,14 +95,10 @@ class PsqlBase:
         hostname = parsed_url.hostname
         db_name = parsed_url.path[1:]
         return psycopg2.connect(
-            host = hostname,
-            dbname=db_name,
-            user=username,
-            password=password
+            host=hostname, dbname=db_name, user=username, password=password
         )
 
-
-    def execute_commit(self, query:str, param: dict | None = None):
+    def execute_commit(self, query: str, param: dict | None = None):
         """
         クエリを実行するだけ。commitが必要な場合はこっち。
         """
@@ -111,21 +108,22 @@ class PsqlBase:
                 cur.execute(query)
             else:
                 cur.execute(query, param)
-            
-            con.commit()
 
-    def execute_df(self, query:str, param: dict | None = None):
+            con.commit()
+            print(cur.fetchone()[0])
+
+    def execute_df(self, query: str, param: dict | None = None):
         """
         クエリを実行してデータフレームを取得
         """
         if param is None:
-            return pd.read_sql(sql = query, con = self.db_pd_connection())
+            return pd.read_sql(sql=query, con=self.db_pd_connection())
         else:
-            return pd.read_sql(sql = query, con = self.db_pd_connection(), params = param)
+            return pd.read_sql(sql=query, con=self.db_pd_connection(), params=param)
 
     def current_time(self):
         """
         現在の日時を取得。
         create_atやupdate_atの日時セットに。
         """
-        return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
