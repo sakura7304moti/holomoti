@@ -110,7 +110,6 @@ class PsqlBase:
                 cur.execute(query, param)
 
             con.commit()
-            print(cur.fetchone()[0])
 
     def execute_df(self, query: str, param: dict | None = None):
         """
