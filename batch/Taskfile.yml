@@ -6,3 +6,8 @@ tasks:
     desc: twitterのDBを更新する
     cmds:
       - uv run python twitter_service.py
+  create_table:
+    dir: ./service
+    desc: テーブルを作成する
+    cmds:
+      - uv run python create_table_test.py
