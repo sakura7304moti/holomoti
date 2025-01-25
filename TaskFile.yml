@@ -4,6 +4,6 @@ tasks:
   deploy:
     desc: uiのビルドをしてデプロイする
     cmds:
-      - API_URL=https://holomotibg.sakura0moti.com:8000 reflex export --frontend-only
+      - API_URL=https://holomotibg.sakura0moti.com reflex export --frontend-only
       - sudo rm -rf frontend/*
       - sudo unzip frontend.zip -d frontend
