@@ -1,9 +1,17 @@
 version: '3'
 
 tasks:
-  deploy:
+  deploy_fr:
     desc: uiのビルドをしてデプロイする
     cmds:
-      - API_URL=https://holomotibg.sakura0moti.com reflex export --frontend-only
+      - git fetch
+      - git pull
+      - reflex export --frontend-only
       - sudo rm -rf frontend/*
       - sudo unzip frontend.zip -d frontend
+  deploy_bg:
+    desc: backendのデプロイする
+    cmds:
+      - git fetch
+      - git pull
+      - sudo systemctl restart holomoti.service
