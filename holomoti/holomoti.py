@@ -262,6 +262,7 @@ def index() -> rx.Component:
         background_image="url('https://hololive.hololivepro.com/wp-content/themes/hololive/images/fixed_bg.jpg')",
         align_items="start",
         text_align="left",
+        color="black",
     )
 
 
