@@ -10,7 +10,7 @@ import reflex as rx
 
 def get_holo_names():
     opt = batch_utils.Option()
-    df = pd.read_csv(opt.holo_names())
+    df = pd.read_csv(opt.holo_names()).drop_duplicates(subset=["hashtag"], keep="first")
     records = []
     for _, row in df.iterrows():
         m = HoloName()
